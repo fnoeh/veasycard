@@ -1,6 +1,5 @@
 require 'spec_helper'
 
-
 describe Veasycard do
 
   it "adds method :vcard to class" do
@@ -32,7 +31,38 @@ describe Veasycard do
     end
 
     it "in raw format" do
-      @p.vcard({:format => :raw}).class.should == String
+      result = @p.vcard({:format => :raw})
+      result.class.should == String
+      result.should match(/\ABEGIN:VCARD\n^VERSION:[\d.]*\n^END:VCARD\n\z/)
+    end
+  end
+
+  context "Usage" do
+
+    before(:all) do
+      class Person
+        attr_accessor :last_name
+        attr_accessor :first_name
+        
+        include Veasycard
+
+        veasycard :family_name, :last_name
+        veasycard :given_name, :first_name
+      end
+    end
+
+    it "can map attribute names" do
+      mappings = Person.veasycard_attribute_mapping
+      mappings.should_not be_nil
+      mappings.keys.should include(:family_name, :given_name)
+    end
+
+    it "includes given names" do
+      p = Person.new
+      p.last_name = "Doe"
+      p.first_name = "John"
+      
+      p.vcard(:format => :raw).should match(/^N:Doe;John;;;/)
     end
   end
 
