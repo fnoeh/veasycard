@@ -64,6 +64,22 @@ describe Veasycard do
       
       p.vcard(:format => :raw).should match(/^N:Doe;John;;;/)
     end
-  end
 
+    context "raises Exception" do
+      it "when instance has no name components" do
+        p = Person.new # this one has no name
+        lambda {p.vcard}.should raise_error(ArgumentError, "no name supplied")
+      end
+      it "when name components have not been mapped" do
+        class User
+          include Veasycard
+          veasycard :email, :mail_address
+        end
+
+        u = User.new
+        lambda {u.vcard}.should raise_error(ArgumentError, "no name supplied")
+      end
+    end
+
+  end
 end

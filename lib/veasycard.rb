@@ -23,6 +23,12 @@ module Veasycard
     else
       card = Vpim::Vcard::Maker.make2 do |maker|
         maker.add_name do |name|
+          
+          no_name_supplied = [:prefix, :given_name, :family_name].map do |key|
+            self.send(mapping[key]) unless mapping[key].nil?
+          end.compact.empty?
+          raise ArgumentError.new "no name supplied" if no_name_supplied
+          
           name.prefix = self.send mapping[:prefix] if mapping[:prefix]
           name.given = self.send mapping[:given_name] if mapping[:given_name]
           name.family = self.send mapping[:family_name] if mapping[:family_name]
