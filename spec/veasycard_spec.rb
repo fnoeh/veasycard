@@ -33,7 +33,7 @@ describe Veasycard do
     it "in raw format" do
       result = @p.vcard({:format => :raw})
       result.class.should == String
-      result.should match(/\ABEGIN:VCARD\n^VERSION:[\d.]*\n^END:VCARD\n\z/)
+      result.should match(/\ABEGIN:VCARD\n^VERSION:[\d\.]*\n^END:VCARD\n\z/)
     end
   end
 
