@@ -21,8 +21,10 @@ describe Veasycard do
     before(:all) do
       class Person
         include Veasycard
+        attr_accessor :family_name
       end
       @p = Person.new
+      @p.family_name = "Doe"
     end
 
     it "as object" do
@@ -33,7 +35,7 @@ describe Veasycard do
     it "in raw format" do
       result = @p.vcard({:format => :raw})
       result.class.should == String
-      result.should match(/\ABEGIN:VCARD\n^VERSION:[\d\.]*\n^END:VCARD\n\z/)
+      result.should match(/\ABEGIN:VCARD\n^VERSION:[\d\.]*.*\n^END:VCARD\n\z/m)
     end
   end
 
@@ -57,7 +59,7 @@ describe Veasycard do
       mappings.keys.should include(:family_name, :given_name)
     end
 
-    it "includes given names" do
+    it "includes provided names" do
       p = Person.new
       p.last_name = "Doe"
       p.first_name = "John"
@@ -70,6 +72,7 @@ describe Veasycard do
         p = Person.new # this one has no name
         lambda {p.vcard}.should raise_error(ArgumentError, "no name supplied")
       end
+
       it "when name components have not been mapped" do
         class User
           include Veasycard
@@ -79,6 +82,59 @@ describe Veasycard do
         u = User.new
         lambda {u.vcard}.should raise_error(ArgumentError, "no name supplied")
       end
+    end
+  end
+
+  describe "Attribute mapping" do
+
+    before(:each) do
+      # removes the Person class definition
+      Object.send(:remove_const, :Person) if defined? Person
+    end
+
+    it "uses standard names" do
+      class Person
+        include Veasycard
+        attr_accessor :family_name
+      end
+
+      p = Person.new
+      p.family_name = "foo"
+
+      p.vcard.name.family.should == "foo"
+    end
+    
+    it "uses alternative attribute names automatically" do
+      class Person
+        attr_accessor :last_name, :first_name
+        include Veasycard
+      end
+
+      p = Person.new
+      p.first_name = "John"
+      p.last_name = "Doe"
+      vcard = p.vcard
+
+      lambda { vcard.name }.should_not raise_error
+
+      vcard.name.family.should == "Doe"
+      vcard.name.given.should == "John"      
+    end
+    
+    it "manual mapping takes precedence over automatic mapping" do
+
+      class Person
+        attr_accessor :family_name
+        attr_accessor :the_name
+        include Veasycard
+        veasycard :family_name, :the_name
+      end
+
+      p = Person.new
+      p.family_name = "family_name"
+      p.the_name = "the_name"
+
+      p.vcard.name.family.should == "the_name"
     end
 
   end

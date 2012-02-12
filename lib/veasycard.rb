@@ -1,4 +1,5 @@
 require 'vpim/vcard'
+require 'yaml'
 
 module Veasycard
 
@@ -18,24 +19,36 @@ module Veasycard
   def vcard(options={})
     mapping = self.class.veasycard_attribute_mapping
 
-    if mapping.nil?
-      card = Vpim::Vcard.create
-    else
-      card = Vpim::Vcard::Maker.make2 do |maker|
-        maker.add_name do |name|
-          
-          no_name_supplied = [:prefix, :given_name, :family_name].map do |key|
-            self.send(mapping[key]) unless mapping[key].nil?
-          end.compact.empty?
-          raise ArgumentError.new "no name supplied" if no_name_supplied
-          
-          name.prefix = self.send mapping[:prefix] if mapping[:prefix]
-          name.given = self.send mapping[:given_name] if mapping[:given_name]
-          name.family = self.send mapping[:family_name] if mapping[:family_name]
+    card = Vpim::Vcard::Maker.make2 do |maker|
+
+      i18n = YAML.load_file("lib/i18n.yml")
+      maker.add_name do |name|
+        names = {}
+
+        [:family_name, :given_name].each do |name|
+          if m = mapping[name] rescue nil
+            actual_value = self.send m
+            names[name] = actual_value
+            next
+          end
+
+          i18n["en"][name.to_s].each do |translation|
+            n = self.send(translation) rescue nil
+            if n
+              names[name] = n unless n.nil?
+              break
+            end
+          end
         end
+        
+        raise ArgumentError.new "no name supplied" if names.values.compact.empty?
+        
+        name.family = names[:family_name] if names[:family_name]
+        name.given  = names[:given_name]  if names[:given_name]
+        name.prefix = names[:prefix]      if names[:prefix]
       end
     end
-
+  
     case options[:format]
     when :raw
       card.to_s

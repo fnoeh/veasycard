@@ -1,0 +1,19 @@
+en:
+  name: English
+  family_name:
+    - family_name
+    - last_name
+    - surname
+  given_name:
+    - given_name
+    - first_name
+    - christian_name
+    - forename
+de:
+  name: German
+  family_name:
+    - familienname
+    - nachname
+  given_name: 
+    - vorname
+    - rufname
