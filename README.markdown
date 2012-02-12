@@ -42,7 +42,7 @@ For example this will work for any of the following attribute names which would 
 - last_name
 - surname
 
-Similarly, these would be used for the given_name:
+Similarly, these would be used for the given name:
 
 - given_name
 - first_name
