@@ -33,7 +33,23 @@ You can then create a vCard with the `vcard` method.
     u.vcard(:format => :raw)
 
 
-Until future versions of Veasycard add some magic, you have to map your model’s attributes like this
+### Attribute mapping
+
+If your model’s attributes use standard names, they will be mapped automatically.
+For example this will work for any of the following attribute names which would fill in for the family name:
+
+- family_name
+- last_name
+- surname
+
+Similarly, these would be used for the given_name:
+
+- given_name
+- first_name
+- christian_name
+- forename
+
+If however your model uses less common attribute names, you can map them manually like in this spanish example:
 
     class Persona
       include Veasycard
