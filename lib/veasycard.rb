@@ -35,7 +35,7 @@ module Veasycard
           i18n["en"][name.to_s].each do |translation|
             n = self.send(translation) rescue nil
             if n
-              names[name] = n unless n.nil?
+              names[name] = n
               break
             end
           end
