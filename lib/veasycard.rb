@@ -3,6 +3,10 @@ require 'yaml'
 
 module Veasycard
 
+  def veasycard_language
+    :en
+  end
+
   module ClassMethods
     attr_reader :veasycard_attribute_mapping
 
@@ -16,12 +20,26 @@ module Veasycard
     base.extend(ClassMethods)
   end
 
+  i18n = YAML.load_file("lib/i18n.yml")
+  i18n.each_key do |lang|
+    s = "module #{lang.upcase}
+      include Veasycard
+      def veasycard_language; :#{lang}; end
+
+      def self.included(base)
+        base.extend(Veasycard::ClassMethods)
+      end
+    end"
+    eval s if lang =~ /[a-z]{2}/
+  end
+
   def vcard(options={})
     mapping = self.class.veasycard_attribute_mapping
 
     card = Vpim::Vcard::Maker.make2 do |maker|
 
       i18n = YAML.load_file("lib/i18n.yml")
+
       maker.add_name do |name|
         names = {}
 
@@ -32,7 +50,7 @@ module Veasycard
             next
           end
 
-          i18n["en"][name.to_s].each do |translation|
+          i18n[self.veasycard_language.to_s][name.to_s].each do |translation|
             n = self.send(translation) rescue nil
             if n
               names[name] = n

@@ -137,5 +137,29 @@ describe Veasycard do
       p.vcard.name.family.should == "the_name"
     end
 
+    context "with i18n" do
+      it "won't be activated implicitly" do
+        class Person
+          attr_accessor :nachname
+          include Veasycard
+        end
+
+        p = Person.new
+        p.nachname = "Mustermann"
+
+        lambda {p.vcard.name}.should raise_error
+      end
+
+      it "can be activated explicitly" do
+        class Person
+          attr_accessor :nachname
+          include Veasycard::DE
+        end
+
+        p = Person.new
+        p.nachname = "Mustermann"
+
+        p.vcard.name.family.should == "Mustermann"
+      end
   end
 end

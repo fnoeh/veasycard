@@ -59,3 +59,15 @@ If however your model uses less common attribute names, you can map them manuall
       veasycard :family_name, :apellido
       veasycard :given_name, :nombre
     end
+
+### Internationalization
+
+Veasycard can map non-english attribute names (currently german only).
+
+Attribute names are provided by `lib/i18n.yml`. A model’s language must be set explicitly.
+
+    class Anwender
+      attr_accessor :nachname 		# german for last name
+
+      include Veasycard::DE
+    end
