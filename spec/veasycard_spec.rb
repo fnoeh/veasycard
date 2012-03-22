@@ -162,4 +162,65 @@ describe Veasycard do
         p.vcard.name.family.should == "Mustermann"
       end
   end
+
+    describe "e-mail addresses" do
+      it "use standard attribute names" do
+        class Person
+          include Veasycard
+          attr_accessor :family_name, :mail_address
+        end
+
+        p = Person.new
+        p.family_name = "Doe"
+        p.mail_address = "john.doe@example.com"
+
+        p.vcard.email.should == p.mail_address
+      end
+
+      it "can be mapped to alternate attribute names" do
+        class Person
+          include Veasycard
+          attr_accessor :family_name, :the_mail_address
+          veasycard :email, :the_mail_address
+        end
+
+        p = Person.new
+        p.family_name = "Doe"
+        p.the_mail_address = "john.doe@example.com"
+
+        p.vcard.email.should == p.the_mail_address
+      end
+
+      it "can have multiple e-mail addresses with options" do
+        class Person
+          include Veasycard
+          attr_accessor :family_name, :mail_private, :mail_business
+          veasycard :email, :mail_private, :location => "home"
+          veasycard :email, :mail_business, :location => "work", :preferred => true
+        end
+
+        p = Person.new
+        p.family_name = "Doe"
+        p.mail_private = "john.doe.private@example.com"
+        p.mail_business = "john.doe.business@example.com"
+
+        card = p.vcard
+        card.emails.should have(2).things
+
+        business, home = card.emails
+        if business == p.mail_private
+          home,business = business,home
+        end
+
+        home.should == p.mail_private
+        business.should == p.mail_business
+
+        home.preferred.should == false
+        business.preferred.should == true
+
+        home.location.should include "home"
+        business.location.should include "work"
+      end
+    end
+  end
 end

@@ -9,11 +9,25 @@ en:
     - first_name
     - christian_name
     - forename
+  email:
+    - email
+    - e_mail
+    - mail
+    - mail_address
+    - email_address
+    - e_mail_address
 de:
   name: German
   family_name:
     - familienname
     - nachname
-  given_name: 
+  given_name:
     - vorname
     - rufname
+  email:
+    - email
+    - e_mail
+    - mail
+    - email_adresse
+    - e_mail_adresse
+    - mail_adresse
