@@ -1,13 +1,22 @@
 require 'spec_helper'
 
+# this removes any Person class definition
+def undef_person
+  Object.send(:remove_const, :Person) if defined? Person
+end
+
 describe Veasycard do
+
+  before :all do
+    undef_person
+  end
 
   it "adds method :vcard to class" do
     class Person
     end
-    
+
     p = Person.new
-    
+
     p.should_not respond_to :vcard
 
     class Person
@@ -45,7 +54,7 @@ describe Veasycard do
       class Person
         attr_accessor :last_name
         attr_accessor :first_name
-        
+
         include Veasycard
 
         veasycard :family_name, :last_name
@@ -63,7 +72,7 @@ describe Veasycard do
       p = Person.new
       p.last_name = "Doe"
       p.first_name = "John"
-      
+
       p.vcard(:format => :raw).should match(/^N:Doe;John;;;/)
     end
 
@@ -88,8 +97,7 @@ describe Veasycard do
   describe "Attribute mapping" do
 
     before(:each) do
-      # removes the Person class definition
-      Object.send(:remove_const, :Person) if defined? Person
+      undef_person
     end
 
     it "uses standard names" do
@@ -103,7 +111,7 @@ describe Veasycard do
 
       p.vcard.name.family.should == "foo"
     end
-    
+
     it "uses alternative attribute names automatically" do
       class Person
         attr_accessor :last_name, :first_name
@@ -118,9 +126,9 @@ describe Veasycard do
       lambda { vcard.name }.should_not raise_error
 
       vcard.name.family.should == "Doe"
-      vcard.name.given.should == "John"      
+      vcard.name.given.should == "John"
     end
-    
+
     it "manual mapping takes precedence over automatic mapping" do
 
       class Person
@@ -161,7 +169,7 @@ describe Veasycard do
 
         p.vcard.name.family.should == "Mustermann"
       end
-  end
+    end
 
     describe "e-mail addresses" do
       it "use standard attribute names" do
@@ -220,6 +228,72 @@ describe Veasycard do
 
         home.location.should include "home"
         business.location.should include "work"
+      end
+    end
+
+    describe "date of birth" do
+
+      context "standard locale" do
+        before :each do
+          class Person
+            include Veasycard
+            attr_accessor :dob, :family_name
+          end
+
+          @p = Person.new
+          @p.family_name = "Doe"
+        end
+
+        it "accepts date objects as d.o.b." do
+          @p.dob = Date.new(2005, 01, 14)
+          @p.vcard.birthday.should == @p.dob
+          @p.vcard.birthday.to_s.should == @p.dob.strftime("%Y-%m-%d")
+        end
+
+        it "accepts string as d.o.b." do
+          @p.dob = "2004-03-19"
+          @p.vcard.birthday.should == Date.new(2004, 3, 19) #@p.dob
+          @p.vcard.birthday.to_s.should == @p.dob
+        end
+
+        it "can map d.o.b. manually" do
+          class Person
+            attr_accessor :the_date
+            veasycard :birthday, :the_date
+          end
+
+          @p = Person.new
+          @p.the_date = Date.new(1943, 11, 3)
+          @p.family_name = "Doe"
+          @p.vcard.birthday.should == @p.the_date
+        end
+      end
+      
+      context "other locale" do
+        it "with implicit attribute mapping" do
+          class Person
+            include Veasycard::DE
+            attr_accessor :nachname, :geburtstag
+          end
+
+          p = Person.new
+          p.nachname = "Mustermann"
+          p.geburtstag = Date.new(1993, 3, 9)
+          p.vcard.birthday.should == p.geburtstag
+        end
+
+        it "with explicit attribute mapping" do
+          class Person
+            include Veasycard::DE
+            attr_accessor :nachname, :tag
+            veasycard :birthday, :tag
+          end
+
+          p = Person.new
+          p.nachname = "Mustermann"
+          p.tag = Date.new(1993, 3, 9)
+          p.vcard.birthday.should == p.tag
+        end
       end
     end
   end

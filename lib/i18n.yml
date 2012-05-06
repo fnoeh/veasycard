@@ -16,6 +16,10 @@ en:
     - mail_address
     - email_address
     - e_mail_address
+  birthday:
+    - birthday
+    - date_of_birth
+    - dob
 de:
   name: German
   family_name:
@@ -31,3 +35,6 @@ de:
     - email_adresse
     - e_mail_adresse
     - mail_adresse
+  birthday:
+    - geburtstag
+    - tag_der_geburt

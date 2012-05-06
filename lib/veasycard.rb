@@ -19,7 +19,7 @@ module Veasycard
         @veasycard_attribute_mapping[:email][options] = attribute
       else
         @veasycard_attribute_mapping[vcard_attribute] = attribute
-      end    
+      end
     end
   end
 
@@ -29,20 +29,19 @@ module Veasycard
 
   i18n = YAML.load_file("lib/i18n.yml")
   i18n.each_key do |lang|
-    s = "module #{lang.upcase}
+    s = %Q{module #{lang.upcase}
       include Veasycard
       def veasycard_language; :#{lang}; end
 
       def self.included(base)
         base.extend(Veasycard::ClassMethods)
       end
-    end"
+    end}
     eval s if lang =~ /[a-z]{2}/
   end
 
   def vcard(options={})
     mapping = self.class.veasycard_attribute_mapping || {}
-
     card = Vpim::Vcard::Maker.make2 do |maker|
 
       i18n = YAML.load_file("lib/i18n.yml")
@@ -52,8 +51,8 @@ module Veasycard
 
         [:family_name, :given_name].each do |name|
           if m = mapping[name] rescue nil
-            actual_value = self.send m
-            names[name] = actual_value
+            actual_value = self.send m # actual_value is the value stored in the models appropriate instance variable, e.g. "John"
+            names[name] = actual_value # names["given_name"] = "John"
             next
           end
 
@@ -65,14 +64,15 @@ module Veasycard
             end
           end
         end
-        
+
         raise ArgumentError.new "no name supplied" if names.values.compact.empty?
-        
+
         name.family = names[:family_name] if names[:family_name]
         name.given  = names[:given_name]  if names[:given_name]
         name.prefix = names[:prefix]      if names[:prefix]
       end
-      
+
+
       if mapping[:email].nil?
         # try default values for this language
         i18n[self.veasycard_language.to_s]["email"].each do |attribute|
@@ -86,8 +86,24 @@ module Veasycard
           end
         end
       end
+
+      # other attributes
+      %w(birthday).each do |attribute|
+        if m = mapping[attribute.to_sym] rescue nil
+          set_maker_attribute(maker, attribute, self.send(m))
+          next
+        end
+
+        # no mapping applies... => check all defaults from i18n
+        i18n[self.veasycard_language.to_s][attribute].each do |default|
+          if value = self.send(default) rescue nil
+            set_maker_attribute(maker, attribute, value)
+            break
+          end
+        end
+      end
     end
-  
+
     case options[:format]
     when :raw
       card.to_s
@@ -96,4 +112,36 @@ module Veasycard
     end
   end
 
+private
+
+  def set_maker_attribute(maker, attribute, value)
+    adjusted_value = adjust_attribute_type(attribute, value)
+    maker.send("#{attribute}=", adjusted_value)
+  end
+
+  def adjust_attribute_type(attribute, value)
+    case attribute.to_sym
+    when :birthday
+      case value
+      when String
+        return Date.parse(value)
+      when Date, DateTime
+        return value
+      end
+    else
+      return value
+    end
+  end
+
 end
+
+
+
+=begin
+  case attribute
+  when :birthday
+
+  else
+    
+  end
+=end
