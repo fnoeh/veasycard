@@ -145,7 +145,7 @@ describe Veasycard do
       p.vcard.name.family.should == "the_name"
     end
 
-    context "with i18n" do
+    context "with i18n", :i18n do
       it "won't be activated implicitly" do
         class Person
           attr_accessor :nachname
