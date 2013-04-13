@@ -5,6 +5,8 @@
 
 With Veasycard you can easily create vCards for your ruby models.
 
+It was designed to be used with as little code as possible on your part.
+
 ## Installation
 
 Just add
@@ -24,13 +26,27 @@ Veasycard uses [vPim](https://github.com/sam-github/vpim) by _Sam Roberts_, whic
 Just include `Veasycard` in the model for which you want to generate vCards.
 
     class User
+      attr_accessor :family_name
       include Veasycard
     end
 
 You can then create a vCard with the `vcard` method.
 
     u = User.new
+    u.family_name = "Matsumoto"
+    u.vcard
+    
+This will return a Vpim::Vcard object as defined by the vPim gem. `to_s` yields the desired output or you can get the text by using the raw format.
+
     u.vcard(:format => :raw)
+
+will return
+
+    BEGIN:VCARD
+    VERSION:3.0
+    N:Matsumoto;;;;
+    FN:Matsumoto
+    END:VCARD
 
 
 ### Attribute mapping
@@ -54,10 +70,10 @@ If however your model uses less common attribute names, you can map them manuall
     class Persona
       include Veasycard
 
-      attr_accessor :apellido, :nombre   # not necessary
-
-      veasycard :family_name, :apellido
-      veasycard :given_name, :nombre
+      veasycard do 
+        family_name :apellido
+        given_name  :nombre
+      end
     end
 
 ### Internationalization

@@ -9,24 +9,44 @@ module Veasycard
 
   module ClassMethods
     attr_reader :veasycard_attribute_mapping
-
-    def veasycard(vcard_attribute, attribute, options = {})
-      @veasycard_attribute_mapping ||= {}
-
-      case vcard_attribute
-      when :email
-        @veasycard_attribute_mapping[:email] ||= {}
-        @veasycard_attribute_mapping[:email][options] = attribute
+    
+    VCARD_ATTRIBUTES = [
+      :family_name,
+      :given_name,
+      :email,
+      :birthday
+    ]
+    
+    def set_attribute(attribute, value)
+      @veasycard_attribute_mapping[attribute] = value
+    end
+    
+    def method_missing(m, *args, &block)
+      if VCARD_ATTRIBUTES.include?(m)
+        define_method(m) { |args|
+          set_attribute(m, *args)
+        }.call(args)
       else
-        @veasycard_attribute_mapping[vcard_attribute] = attribute
+        raise NoMethodError.new "Cannot use #{m} with veasycard."
       end
     end
+    
+    def email attribute, options = {}
+      @veasycard_attribute_mapping[:email] ||= {}
+      @veasycard_attribute_mapping[:email][options] = attribute
+    end
+    
+    def veasycard(&block)
+      @veasycard_attribute_mapping ||= {}
+      yield
+    end    
   end
-
+  
   def self.included(base)
     base.extend(ClassMethods)
   end
 
+  # TODO: add config file to only define specific language modules
   i18n = YAML.load_file("lib/i18n.yml")
   i18n.each_key do |lang|
     s = %Q{module #{lang.upcase}
@@ -43,7 +63,6 @@ module Veasycard
   def vcard(options={})
     mapping = self.class.veasycard_attribute_mapping || {}
     card = Vpim::Vcard::Maker.make2 do |maker|
-
       i18n = YAML.load_file("lib/i18n.yml")
 
       maker.add_name do |name|
@@ -71,8 +90,7 @@ module Veasycard
         name.given  = names[:given_name]  if names[:given_name]
         name.prefix = names[:prefix]      if names[:prefix]
       end
-
-
+      
       if mapping[:email].nil?
         # try default values for this language
         i18n[self.veasycard_language.to_s]["email"].each do |attribute|
@@ -86,7 +104,7 @@ module Veasycard
           end
         end
       end
-
+      
       # other attributes
       %w(birthday).each do |attribute|
         if m = mapping[attribute.to_sym] rescue nil
@@ -103,7 +121,7 @@ module Veasycard
         end
       end
     end
-
+    
     case options[:format]
     when :raw
       card.to_s
@@ -132,16 +150,4 @@ private
       return value
     end
   end
-
 end
-
-
-
-=begin
-  case attribute
-  when :birthday
-
-  else
-    
-  end
-=end

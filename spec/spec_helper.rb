@@ -12,3 +12,8 @@ RSpec.configure do |config|
   config.run_all_when_everything_filtered = true
   config.filter_run :focus
 end
+
+# this removes any Person class definition
+def undef_person
+  Object.send(:remove_const, :Person) if defined? Person
+end

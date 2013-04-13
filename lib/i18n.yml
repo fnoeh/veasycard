@@ -20,6 +20,7 @@ en:
     - birthday
     - date_of_birth
     - dob
+    - birthdate
 de:
   name: German
   family_name:
@@ -38,3 +39,4 @@ de:
   birthday:
     - geburtstag
     - tag_der_geburt
+    - geburtsdatum
