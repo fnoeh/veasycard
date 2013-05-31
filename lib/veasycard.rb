@@ -10,15 +10,33 @@ module Veasycard
   module ClassMethods
     attr_reader :veasycard_attribute_mapping
     
-    VCARD_ATTRIBUTES = [
+    VCARD_ATTRIBUTES_PERSONAL = [
       :family_name,
       :given_name,
       :email,
-      :birthday
+      :birthday,
+      :address
+    ]
+    VCARD_ATTRIBUTES_ADDRESS = [
+      :street,
+      :supplement,
+      :locality,
+      :zipcode,
+      :pobox,
+      :region,
+      :country
     ]
     
+    VCARD_ATTRIBUTES = VCARD_ATTRIBUTES_PERSONAL + VCARD_ATTRIBUTES_ADDRESS
+    
     def set_attribute(attribute, value)
-      @veasycard_attribute_mapping[attribute] = value
+      if VCARD_ATTRIBUTES_PERSONAL.include?(attribute)
+        @veasycard_attribute_mapping[attribute] = value
+      elsif VCARD_ATTRIBUTES_ADDRESS.include?(attribute)
+        @veasycard_attribute_mapping[:address][attribute] = value
+      else
+        raise Error.new "Oops, something went wrong."
+      end
     end
     
     def method_missing(m, *args, &block)
@@ -36,6 +54,11 @@ module Veasycard
       @veasycard_attribute_mapping[:email][options] = attribute
     end
     
+    def address attribute, options = {}, &block
+      @veasycard_attribute_mapping[:address] ||= {attribute: attribute}
+      yield if block_given?
+    end
+        
     def veasycard(&block)
       @veasycard_attribute_mapping ||= {}
       yield
@@ -118,6 +141,18 @@ module Veasycard
             set_maker_attribute(maker, attribute, value)
             break
           end
+        end
+      end
+      
+      if mapping[:address]
+        maker.add_addr do |addr|
+          addr.street     = self.send(mapping[:address][:attribute]).send(mapping[:address][:street])
+          addr.extended   = self.send(mapping[:address][:attribute]).send(mapping[:address][:supplement])
+          addr.locality   = self.send(mapping[:address][:attribute]).send(mapping[:address][:locality])
+          addr.postalcode = self.send(mapping[:address][:attribute]).send(mapping[:address][:zipcode])
+          addr.pobox      = self.send(mapping[:address][:attribute]).send(mapping[:address][:pobox])
+          addr.region     = self.send(mapping[:address][:attribute]).send(mapping[:address][:region])
+          addr.country    = self.send(mapping[:address][:attribute]).send(mapping[:address][:country])
         end
       end
     end

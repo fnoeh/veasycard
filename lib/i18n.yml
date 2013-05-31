@@ -21,6 +21,39 @@ en:
     - date_of_birth
     - dob
     - birthdate
+  address:
+    street:
+      - street
+    supplement:
+      - extended
+      - extension
+      - supplement
+      - street_extension
+      - street_supplement
+    street_number:
+      - street_number
+      - street_no
+      - house_number
+      - house_no
+    locality:
+      - location
+      - locality
+      - city
+    zipcode:
+      - zipcode
+      - postalcode
+      - postal_code
+    pobox:
+      - pobox
+      - po_box
+      - postoffice_box
+      - post_office_box
+      - postal_box
+    region:
+      - region
+      - state
+    countra:
+      - country
 de:
   name: German
   family_name:
@@ -40,3 +73,25 @@ de:
     - geburtstag
     - tag_der_geburt
     - geburtsdatum
+  address:
+    street:
+      - strasse
+      - straße
+    supplement:
+      - adresszusatz
+      - zusatz
+    locality:
+      - ort
+      - stadt
+      - wohnort
+    zipcode:
+      - plz
+      - postleitzahl
+    pobox:
+      - postfach
+    region:
+      - bundesland
+      - region
+    country:
+      - land
+      - staat
