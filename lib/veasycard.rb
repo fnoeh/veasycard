@@ -9,7 +9,11 @@ module Veasycard
 
   module ClassMethods
     attr_reader :veasycard_attribute_mapping
-    
+
+    def vcard_attributes_address
+      return VCARD_ATTRIBUTES_ADDRESS
+    end
+
     VCARD_ATTRIBUTES_PERSONAL = [
       :family_name,
       :given_name,
@@ -26,9 +30,9 @@ module Veasycard
       :region,
       :country
     ]
-    
+
     VCARD_ATTRIBUTES = VCARD_ATTRIBUTES_PERSONAL + VCARD_ATTRIBUTES_ADDRESS
-    
+
     def set_attribute(attribute, value)
       if VCARD_ATTRIBUTES_PERSONAL.include?(attribute)
         @veasycard_attribute_mapping[attribute] = value
@@ -38,7 +42,7 @@ module Veasycard
         raise Error.new "Oops, something went wrong."
       end
     end
-    
+
     def method_missing(m, *args, &block)
       if VCARD_ATTRIBUTES.include?(m)
         define_method(m) { |args|
@@ -48,23 +52,23 @@ module Veasycard
         raise NoMethodError.new "Cannot use #{m} with veasycard."
       end
     end
-    
+
     def email attribute, options = {}
       @veasycard_attribute_mapping[:email] ||= {}
       @veasycard_attribute_mapping[:email][options] = attribute
     end
-    
+
     def address attribute, options = {}, &block
-      @veasycard_attribute_mapping[:address] ||= {attribute: attribute}
+      @veasycard_attribute_mapping[:address] ||= {attribute: attribute} unless attribute.nil?
       yield if block_given?
     end
-        
+
     def veasycard(&block)
       @veasycard_attribute_mapping ||= {}
       yield
-    end    
+    end
   end
-  
+
   def self.included(base)
     base.extend(ClassMethods)
   end
@@ -113,7 +117,7 @@ module Veasycard
         name.given  = names[:given_name]  if names[:given_name]
         name.prefix = names[:prefix]      if names[:prefix]
       end
-      
+
       if mapping[:email].nil?
         # try default values for this language
         i18n[self.veasycard_language.to_s]["email"].each do |attribute|
@@ -127,7 +131,7 @@ module Veasycard
           end
         end
       end
-      
+
       # other attributes
       %w(birthday).each do |attribute|
         if m = mapping[attribute.to_sym] rescue nil
@@ -143,22 +147,43 @@ module Veasycard
           end
         end
       end
-      
-      if mapping[:address]
+
+      unless mapping[:address].nil?
+
+        address_object = self.send(mapping[:address][:attribute])
+
         maker.add_addr do |addr|
-          addr.street     = self.send(mapping[:address][:attribute]).send(mapping[:address][:street])
-          addr.extended   = self.send(mapping[:address][:attribute]).send(mapping[:address][:supplement])
-          addr.locality   = self.send(mapping[:address][:attribute]).send(mapping[:address][:locality])
-          addr.postalcode = self.send(mapping[:address][:attribute]).send(mapping[:address][:zipcode])
-          addr.pobox      = self.send(mapping[:address][:attribute]).send(mapping[:address][:pobox])
-          addr.region     = self.send(mapping[:address][:attribute]).send(mapping[:address][:region])
-          addr.country    = self.send(mapping[:address][:attribute]).send(mapping[:address][:country])
+          address_values = {}
+
+          overridden_vpim_defaults = {
+            :supplement => :extended,
+            :zipcode    => :postalcode
+          }
+
+          self.class.vcard_attributes_address.each do |address_attribute|
+            if a = mapping[:address][address_attribute]
+              address_values[address_attribute] = address_object.send(a)
+              next # don't look through the i18n translations
+            end
+
+            i18n[self.veasycard_language.to_s]['address'][address_attribute.to_s].each do |translation|
+              if address_object.respond_to?(translation)
+                address_values[address_attribute] = address_object.send(translation)
+                break
+              end
+            end
+          end
+
+          address_values.each do |key,value|
+            vpim_attribute = (overridden_vpim_defaults.keys.include? key) ? overridden_vpim_defaults[key] : key
+            addr.send("#{vpim_attribute}=", value)
+          end
         end
       end
     end
-    
+
     case options[:format]
-    when :raw
+    when :raw, 'raw'
       card.to_s
     else
       card

@@ -52,7 +52,7 @@ en:
     region:
       - region
       - state
-    countra:
+    country:
       - country
 de:
   name: German
