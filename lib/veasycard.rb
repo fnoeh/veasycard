@@ -88,95 +88,26 @@ module Veasycard
   end
 
   def vcard(options={})
-    mapping = self.class.veasycard_attribute_mapping || {}
+    @mapping = self.class.veasycard_attribute_mapping || {}
     card = Vpim::Vcard::Maker.make2 do |maker|
-      i18n = YAML.load_file("lib/i18n.yml")
+      @i18n = YAML.load_file("lib/i18n.yml")
 
-      maker.add_name do |name|
-        names = {}
-
-        [:family_name, :given_name].each do |name|
-          if m = mapping[name] rescue nil
-            actual_value = self.send m # actual_value is the value stored in the models appropriate instance variable, e.g. "John"
-            names[name] = actual_value # names["given_name"] = "John"
-            next
-          end
-
-          i18n[self.veasycard_language.to_s][name.to_s].each do |translation|
-            n = self.send(translation) rescue nil
-            if n
-              names[name] = n
-              break
-            end
-          end
-        end
-
-        raise ArgumentError.new "no name supplied" if names.values.compact.empty?
-
-        name.family = names[:family_name] if names[:family_name]
-        name.given  = names[:given_name]  if names[:given_name]
-        name.prefix = names[:prefix]      if names[:prefix]
-      end
-
-      if mapping[:email].nil?
-        # try default values for this language
-        i18n[self.veasycard_language.to_s]["email"].each do |attribute|
-          maker.add_email(self.send(attribute)) if self.respond_to? attribute
-        end
-      else
-        # use manual attribute override
-        mapping[:email].each do |options,attribute|
-          maker.add_email(self.send attribute) do |e|
-            options.each { |option,value| e.send("#{option}=", value.to_s) }
-          end
-        end
-      end
+      handle_name(maker)
+      handle_email(maker)
+      handle_address(maker)
 
       # other attributes
       %w(birthday).each do |attribute|
-        if m = mapping[attribute.to_sym] rescue nil
+        if m = @mapping[attribute.to_sym] rescue nil
           set_maker_attribute(maker, attribute, self.send(m))
           next
         end
 
         # no mapping applies... => check all defaults from i18n
-        i18n[self.veasycard_language.to_s][attribute].each do |default|
+        @i18n[self.veasycard_language.to_s][attribute].each do |default|
           if value = self.send(default) rescue nil
             set_maker_attribute(maker, attribute, value)
             break
-          end
-        end
-      end
-
-      unless mapping[:address].nil?
-
-        address_object = self.send(mapping[:address][:attribute])
-
-        maker.add_addr do |addr|
-          address_values = {}
-
-          overridden_vpim_defaults = {
-            :supplement => :extended,
-            :zipcode    => :postalcode
-          }
-
-          self.class.vcard_attributes_address.each do |address_attribute|
-            if a = mapping[:address][address_attribute]
-              address_values[address_attribute] = address_object.send(a)
-              next # don't look through the i18n translations
-            end
-
-            i18n[self.veasycard_language.to_s]['address'][address_attribute.to_s].each do |translation|
-              if address_object.respond_to?(translation)
-                address_values[address_attribute] = address_object.send(translation)
-                break
-              end
-            end
-          end
-
-          address_values.each do |key,value|
-            vpim_attribute = (overridden_vpim_defaults.keys.include? key) ? overridden_vpim_defaults[key] : key
-            addr.send("#{vpim_attribute}=", value)
           end
         end
       end
@@ -191,6 +122,85 @@ module Veasycard
   end
 
 private
+
+  def handle_name(maker)
+    maker.add_name do |name|
+      names = {}
+
+      [:family_name, :given_name].each do |name|
+        if m = @mapping[name] rescue nil
+          actual_value = self.send m # actual_value is the value stored in the models appropriate instance variable, e.g. "John"
+          names[name] = actual_value # names["given_name"] = "John"
+          next
+        end
+
+        @i18n[self.veasycard_language.to_s][name.to_s].each do |translation|
+          n = self.send(translation) rescue nil
+          if n
+            names[name] = n
+            break
+          end
+        end
+      end
+
+      raise ArgumentError.new "no name supplied" if names.values.compact.empty?
+
+      name.family = names[:family_name] if names[:family_name]
+      name.given  = names[:given_name]  if names[:given_name]
+      name.prefix = names[:prefix]      if names[:prefix]
+    end
+  end
+
+  def handle_email(maker)
+    if @mapping[:email].nil?
+      # try default values for this language
+      @i18n[self.veasycard_language.to_s]["email"].each do |attribute|
+        maker.add_email(self.send(attribute)) if self.respond_to? attribute
+      end
+    else
+      # use manual attribute override
+      @mapping[:email].each do |options,attribute|
+        maker.add_email(self.send attribute) do |e|
+          options.each { |option,value| e.send("#{option}=", value.to_s) }
+        end
+      end
+    end
+  end
+
+  def handle_address(maker)
+    unless @mapping[:address].nil?
+
+      address_object = self.send(@mapping[:address][:attribute])
+
+      maker.add_addr do |addr|
+        address_values = {}
+
+        overridden_vpim_defaults = {
+          :supplement => :extended,
+          :zipcode    => :postalcode
+        }
+
+        self.class.vcard_attributes_address.each do |address_attribute|
+          if a = @mapping[:address][address_attribute]
+            address_values[address_attribute] = address_object.send(a)
+            next # don't look through the i18n translations
+          end
+
+          @i18n[self.veasycard_language.to_s]['address'][address_attribute.to_s].each do |translation|
+            if address_object.respond_to?(translation)
+              address_values[address_attribute] = address_object.send(translation)
+              break
+            end
+          end
+        end
+
+        address_values.each do |key,value|
+          vpim_attribute = (overridden_vpim_defaults.keys.include? key) ? overridden_vpim_defaults[key] : key
+          addr.send("#{vpim_attribute}=", value)
+        end
+      end
+    end
+  end
 
   def set_maker_attribute(maker, attribute, value)
     adjusted_value = adjust_attribute_type(attribute, value)
