@@ -128,16 +128,15 @@ private
       names = {}
 
       [:family_name, :given_name].each do |name|
-        if m = @mapping[name] rescue nil
+        if m = @mapping[name]
           actual_value = self.send m # actual_value is the value stored in the models appropriate instance variable, e.g. "John"
           names[name] = actual_value # names["given_name"] = "John"
           next
         end
 
         @i18n[self.veasycard_language.to_s][name.to_s].each do |translation|
-          n = self.send(translation) rescue nil
-          if n
-            names[name] = n
+          if self.respond_to?(translation)
+            names[name] = self.send(translation)
             break
           end
         end
@@ -171,34 +170,53 @@ private
     unless @mapping[:address].nil?
 
       address_object = self.send(@mapping[:address][:attribute])
+      address_values = retrieve_address_values_from address_object
 
       maker.add_addr do |addr|
-        address_values = {}
-
-        overridden_vpim_defaults = {
-          :supplement => :extended,
-          :zipcode    => :postalcode
-        }
-
-        self.class.vcard_attributes_address.each do |address_attribute|
-          if a = @mapping[:address][address_attribute]
-            address_values[address_attribute] = address_object.send(a)
-            next # don't look through the i18n translations
-          end
-
-          @i18n[self.veasycard_language.to_s]['address'][address_attribute.to_s].each do |translation|
-            if address_object.respond_to?(translation)
-              address_values[address_attribute] = address_object.send(translation)
-              break
-            end
-          end
-        end
-
         address_values.each do |key,value|
-          vpim_attribute = (overridden_vpim_defaults.keys.include? key) ? overridden_vpim_defaults[key] : key
+          vpim_attribute = vpim_attribute_overridden_or_default(key)
           addr.send("#{vpim_attribute}=", value)
         end
       end
+    end
+  end
+
+  def retrieve_address_values_from(address_object)
+    address_values = {}
+
+    self.class.vcard_attributes_address.each do |address_attribute|
+      if a = @mapping[:address][address_attribute]
+        address_values[address_attribute] = address_object.send(a)
+        next # don't look through the i18n translations
+      end
+
+      @i18n[self.veasycard_language.to_s]['address'][address_attribute.to_s].each do |translation|
+        if address_object.respond_to?(translation)
+          address_values[address_attribute] = address_object.send(translation)
+          break
+        end
+      end
+    end
+
+    address_values
+  end
+
+  def overridden_vpim_defaults
+    @overridden_vpim_defaults ||= {
+      :supplement => :extended,
+      :zipcode    => :postalcode
+    }
+  end
+
+  def vpim_default_overridden?(key)
+    overridden_vpim_defaults.include? key
+  end
+
+  def vpim_attribute_overridden_or_default(key)
+    if vpim_default_overridden?(key)
+      overridden_vpim_defaults[key]
+    else
+      key
     end
   end
 
