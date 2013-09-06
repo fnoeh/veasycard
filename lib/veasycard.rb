@@ -76,7 +76,8 @@ module Veasycard
   # TODO: add config file to only define specific language modules
   i18n = YAML.load_file("lib/i18n.yml")
   i18n.each_key do |lang|
-    s = %Q{module #{lang.upcase}
+    next unless lang =~ /[a-z]{2}/
+    eval %Q{module #{lang.upcase}
       include Veasycard
       def veasycard_language; :#{lang}; end
 
@@ -84,59 +85,57 @@ module Veasycard
         base.extend(Veasycard::ClassMethods)
       end
     end}
-    eval s if lang =~ /[a-z]{2}/
   end
 
   def vcard(options={})
-    @mapping = self.class.veasycard_attribute_mapping || {}
-    card = Vpim::Vcard::Maker.make2 do |maker|
-      @i18n = YAML.load_file("lib/i18n.yml")
-
-      handle_name(maker)
-      handle_email(maker)
-      handle_address(maker)
-
-      # other attributes
-      %w(birthday).each do |attribute|
-        if m = @mapping[attribute.to_sym] rescue nil
-          set_maker_attribute(maker, attribute, self.send(m))
-          next
-        end
-
-        # no mapping applies... => check all defaults from i18n
-        @i18n[self.veasycard_language.to_s][attribute].each do |default|
-          if value = self.send(default) rescue nil
-            set_maker_attribute(maker, attribute, value)
-            break
-          end
-        end
-      end
-    end
-
-    case options[:format]
-    when :raw, 'raw'
-      card.to_s
-    else
-      card
-    end
+    load_i18n
+    load_attribute_mapping
+    make_card
+    return_card(options[:format])
   end
 
 private
 
+  def return_card(format=nil)
+    case format
+    when :raw, 'raw'
+      @card.to_s
+    else
+      @card
+    end
+  end
+
+  def load_i18n
+    @i18n = YAML.load_file("lib/i18n.yml")
+  end
+
+  def load_attribute_mapping
+    @mapping = self.class.veasycard_attribute_mapping || {}
+  end
+
+  def make_card
+    @card = Vpim::Vcard::Maker.make2 do |maker|
+      handle_name(maker)
+      handle_email(maker)
+      handle_address(maker)
+      handle_birthday(maker)
+    end
+  end
+
   def handle_name(maker)
-    maker.add_name do |name|
+    maker.add_name do |name_maker|
       names = {}
 
-      [:family_name, :given_name].each do |name|
-        if m = @mapping[name]
+      [:family_name, :given_name].each do |name_type|
+        if m = @mapping[name_type]
           actual_value = self.send m # actual_value is the value stored in the models appropriate instance variable, e.g. "John"
-          names[name] = actual_value # names["given_name"] = "John"
+          names[name_type] = actual_value # names["given_name"] = "John"
           next
         end
 
-        @i18n[self.veasycard_language.to_s][name.to_s].each do |translation|
+        @i18n[self.veasycard_language.to_s][name_type.to_s].each do |translation|
           if self.respond_to?(translation)
-            names[name] = self.send(translation)
+            names[name_type] = self.send(translation)
             break
           end
         end
@@ -144,9 +143,9 @@ private
 
       raise ArgumentError.new "no name supplied" if names.values.compact.empty?
 
-      name.family = names[:family_name] if names[:family_name]
-      name.given  = names[:given_name]  if names[:given_name]
-      name.prefix = names[:prefix]      if names[:prefix]
+      name_maker.family = names[:family_name] if names[:family_name]
+      name_maker.given  = names[:given_name]  if names[:given_name]
+      name_maker.prefix = names[:prefix]      if names[:prefix]
     end
   end
 
@@ -199,6 +198,20 @@ private
     end
 
     address_values
+  end
+
+  def handle_birthday(maker)
+    if m = @mapping[:birthday] rescue nil
+      set_maker_attribute(maker, "birthday", self.send(m))
+    else
+      # no mapping applies... => check all defaults from i18n
+      @i18n[self.veasycard_language.to_s]["birthday"].each do |default|
+        if value = self.send(default) rescue nil
+          set_maker_attribute(maker, "birthday", value)
+          break
+        end
+      end
+    end
   end
 
   def overridden_vpim_defaults
