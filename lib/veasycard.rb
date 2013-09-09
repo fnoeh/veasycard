@@ -150,19 +150,35 @@ private
   end
 
   def handle_email(maker)
-    if @mapping[:email].nil?
-      # try default values for this language
-      @i18n[self.veasycard_language.to_s]["email"].each do |attribute|
-        maker.add_email(self.send(attribute)) if self.respond_to? attribute
-      end
+    if not_mapped_explicitly?(:email)
+      use_implicitly_mapped_email_attributes(maker)
     else
-      # use manual attribute override
-      @mapping[:email].each do |options,attribute|
-        maker.add_email(self.send attribute) do |e|
-          options.each { |option,value| e.send("#{option}=", value.to_s) }
-        end
+      use_explicitly_mapped_email_attributes(maker)
+    end
+  end
+
+  def use_implicitly_mapped_email_attributes(maker)
+    @i18n[self.veasycard_language.to_s]["email"].each do |attribute|
+      maker.add_email(self.send(attribute)) if self.respond_to? attribute
+    end
+  end
+
+  def use_explicitly_mapped_email_attributes(maker)
+    @mapping[:email].each do |options,attribute|
+      add_email_to_maker(maker, options, attribute)
+    end
+  end
+
+  def add_email_to_maker(maker, options, attribute)
+    maker.add_email(self.send attribute) do |e|
+      options.each do |option,value|
+        e.send("#{option}=", value.to_s)
       end
     end
+  end
+
+  def not_mapped_explicitly?(attribute)
+    @mapping[attribute].nil?
   end
 
   def handle_address(maker)
@@ -183,14 +199,14 @@ private
   def retrieve_address_values_from(address_object)
     address_values = {}
 
-    self.class.vcard_attributes_address.each do |address_attribute|
+    vcard_attributes_address.each do |address_attribute|
       if a = @mapping[:address][address_attribute]
         address_values[address_attribute] = address_object.send(a)
         next # don't look through the i18n translations
       end
 
-      @i18n[self.veasycard_language.to_s]['address'][address_attribute.to_s].each do |translation|
-        if address_object.respond_to?(translation)
+      translated_address_attributes[address_attribute.to_s].each do |translation|
+        if valid_attribute?(address_object, translation)
           address_values[address_attribute] = address_object.send(translation)
           break
         end
@@ -198,6 +214,18 @@ private
     end
 
     address_values
+  end
+
+  def vcard_attributes_address
+    self.class.vcard_attributes_address
+  end
+
+  def valid_attribute?(data, method)
+    data.respond_to? method
+  end
+
+  def translated_address_attributes
+    @i18n[self.veasycard_language.to_s]['address']
   end
 
   def handle_birthday(maker)
