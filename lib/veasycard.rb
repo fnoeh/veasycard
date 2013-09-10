@@ -124,29 +124,56 @@ private
 
   def handle_name(maker)
     maker.add_name do |name_maker|
-      names = {}
+      @names = {}
 
       [:family_name, :given_name].each do |name_type|
-        if m = @mapping[name_type]
-          actual_value = self.send m # actual_value is the value stored in the models appropriate instance variable, e.g. "John"
-          names[name_type] = actual_value # names["given_name"] = "John"
-          next
-        end
-
-        @i18n[self.veasycard_language.to_s][name_type.to_s].each do |translation|
-          if self.respond_to?(translation)
-            names[name_type] = self.send(translation)
-            break
-          end
+        if is_mapped_explicitly?(name_type)
+          use_explicitly_mapped_name(name_type)
+        else
+          use_implicitly_mapped_name(name_type)
         end
       end
 
-      raise ArgumentError.new "no name supplied" if names.values.compact.empty?
-
-      name_maker.family = names[:family_name] if names[:family_name]
-      name_maker.given  = names[:given_name]  if names[:given_name]
-      name_maker.prefix = names[:prefix]      if names[:prefix]
+      fail_if_no_name_supplied
+      add_names_to_maker(name_maker)
     end
+  end
+
+  def fail_if_no_name_supplied
+    raise ArgumentError.new "no name supplied" if @names.values.compact.empty?
+  end
+
+  def add_names_to_maker(maker)
+    maker.family = @names[:family_name] if @names[:family_name]
+    maker.given  = @names[:given_name]  if @names[:given_name]
+    maker.prefix = @names[:prefix]      if @names[:prefix]
+  end
+
+  def use_implicitly_mapped_name(type) # type = :(family|given)_name
+    translated_name_attributes(type.to_s).each do |translation|
+      if self.respond_to?(translation)
+        @names[type] = self.send(translation)
+        break
+      end
+    end
+  end
+
+  def use_explicitly_mapped_name(type) # type = :(family|given)_name
+    mapped_attribute_name = @mapping[type]
+    actual_value = self.send(mapped_attribute_name)
+    @names[type] = actual_value
+  end
+
+  def translated_name_attributes(name_type)
+    @i18n[self.veasycard_language.to_s][name_type]
+  end
+
+  def translated_family_name_attributes
+    @i18n[self.veasycard_language.to_s]['family_name']
+  end
+
+  def translated_given_name_attributes
+    @i18n[self.veasycard_language.to_s]['given_name']
   end
 
   def handle_email(maker)
@@ -175,6 +202,10 @@ private
         e.send("#{option}=", value.to_s)
       end
     end
+  end
+
+  def is_mapped_explicitly?(attribute)
+    not not_mapped_explicitly?(attribute)
   end
 
   def not_mapped_explicitly?(attribute)
