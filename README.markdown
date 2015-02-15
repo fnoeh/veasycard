@@ -67,14 +67,16 @@ Similarly, these would be used for the given name:
 
 If however your model uses less common attribute names, you can map them manually like in this spanish example:
 
-    class Persona
-      include Veasycard
+```{ruby}
+class Persona
+  include Veasycard
 
-      veasycard do 
-        family_name :apellido
-        given_name  :nombre
-      end
-    end
+  veasycard do 
+    family_name :apellido
+    given_name  :nombre
+  end
+end
+```
 
 ### Internationalization
 
