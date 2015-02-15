@@ -65,16 +65,16 @@ Similarly, these would be used for the given name:
 - christian_name
 - forename
 
-If however your model uses less common attribute names, you can map them manually like in this spanish example:
+If however your model uses less common attribute names, you can map them manually like in this spanish example.
 
 ```{ruby}
 class Persona
-    include Veasycard
+  include Veasycard
 
-    veasycard do
+  veasycard do
     family_name :apellido
     given_name  :nombre
-    end
+  end
 end
 ```
 
@@ -152,7 +152,6 @@ When using standard attribute names for addresses, you should be good to go.
       end
     end
     ```
-
 
 ### Internationalization
 
