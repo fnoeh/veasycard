@@ -35,7 +35,7 @@ You can then create a vCard with the `vcard` method.
     u = User.new
     u.family_name = "Matsumoto"
     u.vcard
-    
+
 This will return a Vpim::Vcard object as defined by the vPim gem. `to_s` yields the desired output or you can get the text by using the raw format.
 
     u.vcard(:format => :raw)
@@ -67,14 +67,92 @@ Similarly, these would be used for the given name:
 
 If however your model uses less common attribute names, you can map them manually like in this spanish example:
 
-    class Persona
-      include Veasycard
+```{ruby}
+class Persona
+    include Veasycard
 
-      veasycard do 
-        family_name :apellido
-        given_name  :nombre
+    veasycard do
+    family_name :apellido
+    given_name  :nombre
+    end
+end
+```
+
+#### Address
+
+When using standard attribute names for addresses, you should be good to go.
+
+0. The address fields can be **stored inline** the Person/Company class.
+
+    ```{ruby}
+    person = Person.new
+    person.family_name = "Holmes"
+    person.street = "221B Baker Street"
+    ```
+
+0. An **associated address** will be picked up automatically.
+
+    ```{ruby}
+    address = Address.new
+    address.street = "221B Baker Street"
+    address.city = "London"
+
+    person = Person.new
+    person.family_name: "Holmes"
+    person.address: address
+    ```
+
+0. The name of the associated address object can be **specified expliticly**.
+
+    ```{ruby}
+    class Person
+      include Veasycard
+      veasycard do
+        address :living_at
       end
     end
+
+    address = Address.new
+    address.street = "221B Baker Street"
+    address.city = "London"
+
+	person.living_at = address
+    ```
+
+0. Not only the associated address object but also the **address fields** can be **specified explicitly**.
+
+    ```{ruby}
+    class Person
+      include Veasycard
+      veasycard do
+        address :living_at do
+          city :municipality
+          street :name_of_street
+        end
+      end
+    end
+
+	address = Address.new
+	address.municipality = "London"
+	address.name_of_street = "221B Baker Street"
+
+	person.living_at = address
+    ```
+
+0. **Non-standard address field names** can still be specified explicitly when **stored inline** the Person class.
+
+    ```{ruby}
+    class Person
+      include Veasycard
+      veasycard do
+        address :self do
+          city :municipality
+          street :name_of_street
+		end
+      end
+    end
+    ```
+
 
 ### Internationalization
 
