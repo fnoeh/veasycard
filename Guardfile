@@ -10,6 +10,13 @@ guard 'rspec', :version => 2 do
     ]
   end
 
+  watch(%r{^lib/handlers/(.+)_handler.rb}) do |m|
+    [
+      "spec/#{m[1]}_mapping_spec.rb",
+      "spec/veasycard_spec.rb"
+    ]
+  end
+
   watch(%r{^spec/.+_spec\.rb$})
   watch(%r{^lib/(.+)\.rb$})     { |m| "spec/#{m[1]}_spec.rb" }
 

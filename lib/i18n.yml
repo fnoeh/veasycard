@@ -1,97 +1,113 @@
 en:
-  name: English
-  family_name:
-    - family_name
-    - last_name
-    - surname
-  given_name:
-    - given_name
-    - first_name
-    - christian_name
-    - forename
-  email:
-    - email
-    - e_mail
-    - mail
-    - mail_address
-    - email_address
-    - e_mail_address
-  birthday:
-    - birthday
-    - date_of_birth
-    - dob
-    - birthdate
-  address:
-    street:
-      - street
-    supplement:
-      - extended
-      - extension
-      - supplement
-      - street_extension
-      - street_supplement
-    street_number:
-      - street_number
-      - street_no
-      - house_number
-      - house_no
-    locality:
-      - location
-      - locality
-      - city
-    zipcode:
-      - zipcode
-      - postalcode
-      - postal_code
-    pobox:
-      - pobox
-      - po_box
-      - postoffice_box
-      - post_office_box
-      - postal_box
-    region:
-      - region
-      - state
-    country:
-      - country
+  meta:
+    name: English
+  attributes:
+    family_name:
+      - family_name
+      - last_name
+      - surname
+    given_name:
+      - given_name
+      - first_name
+      - christian_name
+      - forename
+    email:
+      - email
+      - e_mail
+      - mail
+      - mail_address
+      - email_address
+      - e_mail_address
+    birthday:
+      - birthday
+      - date_of_birth
+      - dob
+      - birthdate
+    address:
+      meta:
+        names:
+          - address
+          - home_address
+      attributes:
+        street:
+          - street
+          - street_name
+        supplement:
+          - extended
+          - extension
+          - supplement
+          - street_extension
+          - street_supplement
+        street_number:
+          - street_number
+          - street_no
+          - house_number
+          - house_no
+        locality:
+          - location
+          - locality
+          - city
+        zipcode:
+          - zipcode
+          - postalcode
+          - postal_code
+        pobox:
+          - pobox
+          - po_box
+          - postoffice_box
+          - post_office_box
+          - postal_box
+        region:
+          - region
+          - state
+        country:
+          - country
 de:
-  name: German
-  family_name:
-    - familienname
-    - nachname
-  given_name:
-    - vorname
-    - rufname
-  email:
-    - email
-    - e_mail
-    - mail
-    - email_adresse
-    - e_mail_adresse
-    - mail_adresse
-  birthday:
-    - geburtstag
-    - tag_der_geburt
-    - geburtsdatum
-  address:
-    street:
-      - strasse
-      - straße
-    supplement:
-      - adresszusatz
-      - zusatz
-    locality:
-      - ort
-      - stadt
-      - wohnort
-    zipcode:
-      - plz
-      - postleitzahl
-    pobox:
-      - postfach
-    region:
-      - bundesland
-      - region
-    country:
-      - land
-      - staat
+  meta:
+    name: German
+  attributes:
+    family_name:
+      - familienname
+      - nachname
+    given_name:
+      - vorname
+      - rufname
+    email:
+      - email
+      - e_mail
+      - mail
+      - email_adresse
+      - e_mail_adresse
+      - mail_adresse
+    birthday:
+      - geburtstag
+      - tag_der_geburt
+      - geburtsdatum
+    address:
+      meta:
+        names:
+          - adresse
+          - anschrift
+          - wohnanschrift
+      attributes:
+        street:
+          - strasse
+          - straße
+        supplement:
+          - adresszusatz
+          - zusatz
+        locality:
+          - ort
+          - stadt
+          - wohnort
+        zipcode:
+          - plz
+          - postleitzahl
+        pobox:
+          - postfach
+        region:
+          - bundesland
+          - region
+        country:
+          - land
+          - staat

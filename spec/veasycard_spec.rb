@@ -3,55 +3,48 @@ require 'spec_helper'
 describe Veasycard do
 
   describe "method vcard" do
-    before :all do
-      undef_person
-    end
 
     it "added to class with \"include Veasycard\"" do
-      class Person
-      end
-
-      p = Person.new
-      p.should_not respond_to :vcard
-
-      class Person
-        include Veasycard
-      end
-
-      p.should respond_to :vcard
+      expect(Class.new(Object) {}.new).to_not respond_to :vcard
+      expect(Class.new(Object) { include Veasycard }.new).to respond_to :vcard
     end
 
     context "raises Exception" do
-      it "when instance has no name components" do
-        p = Person.new # this one has no name
-        lambda {p.vcard}.should raise_error(ArgumentError, "no name supplied")
-      end
 
-      it "when name components have not been mapped" do
-        class Person
+      let(:person_class) {
+        Class.new(Object) {
           include Veasycard
           attr_accessor :the_name, :mail_address
 
           veasycard do
             email :mail_address
           end
-        end
+        }
+      }
 
-        p = Person.new
+      it "when instance has no name components" do
+        p = person_class.new # this one has no name
+        lambda { p.vcard }.should raise_error(ArgumentError, "no name supplied")
+      end
+
+      it "when name components have not been mapped" do
+        p = person_class.new
         p.mail_address = "john.doe@example.com"
         lambda {p.vcard}.should raise_error(ArgumentError, "no name supplied")
       end
     end
 
     describe "returns vCard" do
-      before(:all) do
-        undef_person
 
-        class Person
+      let(:person_class) {
+        Class.new(Object) {
           include Veasycard
           attr_accessor :family_name
-        end
-        @p = Person.new
+        }
+      }
+
+      before(:each) do
+        @p = person_class.new
         @p.family_name = "Doe"
       end
 
@@ -69,20 +62,18 @@ describe Veasycard do
 
     describe "output" do
       before(:all) do
-        undef_person
-
-        class Person
+        @person_class = Class.new(Object) {
           attr_accessor :last_name,
                         :first_name,
                         :birthday,
                         :email
 
           include Veasycard
-        end
+        }
       end
 
       it "contains provided attributes" do
-        p = Person.new
+        p = @person_class.new
         p.last_name  = "Doe"
         p.first_name = "John"
         p.birthday   = Date.new(1950, 1, 1)
@@ -97,20 +88,16 @@ describe Veasycard do
 
   describe "attribute mapping" do
 
-    before(:each) do
-      undef_person
-    end
-
     it "will be done implicitly" do
-      class Person
+      @person_class = Class.new(Object) {
         include Veasycard
 
         attr_accessor :family_name,
                       :first_name,
                       :mail_address
-      end
+      }
 
-      p = Person.new
+      p = @person_class.new
       p.family_name  = "Doe"
       p.first_name   = "John"
       p.mail_address = "John.Doe@example.com"
@@ -121,7 +108,7 @@ describe Veasycard do
     end
 
     it "can be done explicitly" do
-      class Person
+      @person_class = Class.new(Object) {
         include Veasycard
         attr_accessor :the_last_name,
                       :the_first_name
@@ -130,9 +117,9 @@ describe Veasycard do
           family_name :the_last_name
           given_name  :the_first_name
         end
-      end
+      }
 
-      p = Person.new
+      p = @person_class.new
       p.the_last_name  = "Doe"
       p.the_first_name = "John"
 
@@ -143,7 +130,7 @@ describe Veasycard do
     end
 
     it "explicit mapping takes precedence over implicit mapping" do
-      class Person
+      @person_class = Class.new(Object) {
         include Veasycard
         attr_accessor :family_name,
                       :the_name
@@ -151,9 +138,9 @@ describe Veasycard do
         veasycard do
           family_name :the_name
         end
-      end
+      }
 
-      p = Person.new
+      p = @person_class.new
       p.family_name = "dontusethisone"
       p.the_name    = "Correctname"
 
@@ -161,7 +148,7 @@ describe Veasycard do
     end
 
     it "allows multiple e-mail addresses with options" do
-      class Person
+      @person_class = Class.new(Object) {
         include Veasycard
         attr_accessor :family_name,
                       :mail_private,
@@ -171,9 +158,9 @@ describe Veasycard do
           email :mail_private,  :location => "home", :preferred => true
           email :mail_business, :location => "work"
         end
-      end
+      }
 
-      p = Person.new
+      p = @person_class.new
       p.family_name   = "Doe"
       p.mail_private  = "john.doe.private@example.com"
       p.mail_business = "john.doe.business@example.com"
@@ -196,13 +183,13 @@ describe Veasycard do
     describe "date of birth" do
 
       before :each do
-        class Person
+        @person_class = Class.new(Object) {
           include Veasycard
           attr_accessor :dob,
                         :family_name
-        end
+        }
 
-        @p = Person.new
+        @p = @person_class.new
         @p.family_name = "Doe"
       end
 

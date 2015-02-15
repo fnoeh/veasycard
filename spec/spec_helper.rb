@@ -6,14 +6,43 @@
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 
 require 'veasycard'
+require 'byebug'
 
 RSpec.configure do |config|
   config.treat_symbols_as_metadata_keys_with_true_values = true
   config.run_all_when_everything_filtered = true
   config.filter_run :focus
+
+  config.before(:suite) do
+    # puts "\n" + ("=" * `tput cols`.to_i) + "\n\n"
+    puts ("=" * `tput cols`.to_i) + "\n\n"
+  end
 end
 
-# this removes any Person class definition
-def undef_person
-  Object.send(:remove_const, :Person) if defined? Person
+
+class String
+  # colorization
+  def colorize(color_code)
+    "\e[#{color_code}m#{self}\e[0m"
+  end
+
+  def red
+    colorize(31)
+  end
+
+  def green
+    colorize(32)
+  end
+
+  def yellow
+    colorize(33)
+  end
+
+  def blue
+    colorize(34)
+  end
+
+  def pink
+    colorize(35)
+  end
 end
