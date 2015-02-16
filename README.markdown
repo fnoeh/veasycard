@@ -1,4 +1,4 @@
-> This is a work in progress. This gem is not yet ready for use.
+> This is a work in progress. This gem is not finalized yet. However this readme describes the current usable state.
 
 
 # Introduction
@@ -25,20 +25,26 @@ Veasycard uses [vPim](https://github.com/sam-github/vpim) by _Sam Roberts_, whic
 
 Just include `Veasycard` in the model for which you want to generate vCards.
 
-    class User
-      attr_accessor :family_name
-      include Veasycard
-    end
+```{ruby}
+class User
+  attr_accessor :family_name
+  include Veasycard
+end
+```
 
 You can then create a vCard with the `vcard` method.
 
-    u = User.new
-    u.family_name = "Matsumoto"
-    u.vcard
+```{ruby}
+u = User.new
+u.family_name = "Matsumoto"
+u.vcard
+```
 
 This will return a Vpim::Vcard object as defined by the vPim gem. `to_s` yields the desired output or you can get the text by using the raw format.
 
-    u.vcard(:format => :raw)
+```{ruby}
+u.vcard(:format => :raw)
+```
 
 will return
 
