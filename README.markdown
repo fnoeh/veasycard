@@ -1,3 +1,5 @@
+[![Code Climate](https://codeclimate.com/github/fnoeh/veasycard/badges/gpa.svg)](https://codeclimate.com/github/fnoeh/veasycard)
+
 > This is a work in progress. This gem is not finalized yet. However this readme describes the current usable state.
 
 
