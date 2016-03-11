@@ -104,8 +104,8 @@ When using standard attribute names for addresses, you should be good to go.
     address.city = "London"
 
     person = Person.new
-    person.family_name: "Holmes"
-    person.address: address
+    person.family_name = "Holmes"
+    person.address = address
     ```
 
 0. The name of the associated address object can be **specified expliticly**.
